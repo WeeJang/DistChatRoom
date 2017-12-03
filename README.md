@@ -1,5 +1,5 @@
 
-# DisChatRoom
+# DistChatRoom
 
 这是本科大四时候帮外国友人写的<<Distributed System>>课程作业（不得不说，国外的课程作业难度比国内高出不少),
 学到了很多分布式系统相关的东西。第一次接触到了Lamport大神（对！就是那个Paxos算法的提出者）。
