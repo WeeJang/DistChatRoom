@@ -1,3 +1,10 @@
+
+# DisChatRoom
+
+    这是本科大四时候帮外国友人写的<<Distributed System>>课程作业（不得不说，国外的课程作业难度比国内高出不少),学到了很多分布式系统相关的东西。第一次接触到了Lamport大神（对！就是那个Paxos算法的提出者）。作业主要是实现一个分布式的聊天室，涉及到的功能：会话组成员的更新（加入／离开），选举算法，消息顺序一致性算法等。 一致性主要是使用Lamport Logic Clock。 
+
+## Prerequisites && Start 
+
 安装前准备：
 1 至少四台在在同一个局域网的主机，而且必须是通过有线进行连接的。
 无线的局域网组播，尝试没成功。
@@ -12,9 +19,8 @@ Charroom.jar 是 ChatRoom 工程文件打包导出的可执行文件。打开 cm
 当然，你也可以直接在eclipse 里运行，import工程后，F11即可。
 
 
-4 关于程序开发的逻辑。
-  	就按照你们要求上的来吧：
-Required Features
+## Required Features
+
 Specifically it must have the following features:
 1. A user should be able to create a group
 2. A user should be able to join an existing group
@@ -25,7 +31,10 @@ will use at startup
 a. Total order of the messages
 b. Casual order of the messages
 
+## Design And implements
+
 1 A user should be able to create a group 。UI 界面上 CreateGroup.根据提示，键入用户名，尽量英文，比如 host ，不想输入的话，点击否，它会自动生成一个名字，是根据当前时间转化成十六进制的。然后输入一个端口,提示是20000-60000。电脑的0 -1023端口是为系统，1024-65535是可以用的，我就化了一个范围。60000-65536的尽量不要用，是因为我这是给TCP保留的，下面的TCP链接要用。输入正确之后，就建立了。
+
 2 A user should be able to join an existing group。UI界面上的JoinGroup. 当然前提是当前局域网内有一台chatroom客户端在运行，才能加入。其他同上。
 
 3 A user should be able to leave a group (both graceful and ungraceful)。这个的话，就是说 graceful 是 点击 LeaveGroup , ungraceful 就是直接关闭窗口，或者拔掉网线。
@@ -38,14 +47,12 @@ b. Casual order of the messages
 will use at startup
 a. Total order of the messages
 b. Casual order of the messages
-
-这个的话，我用的方法跟推荐的不一样。我觉得不要紧，后面提到vector clock也是建议使用，只要实现这两肿排序即可。所以我都是用的Lamport Logical clock：思路来源 Lamport大神的《Lamport, L. (1978). “Time, clocks, and the ordering of events in a distributed system”》 和 《http://www.orzace.com/lamport-logical-clock/》。特别是第二个网址，你好好看看，，看懂了就知道，就知道我是怎么写的程序了。看代码没法看懂。
-
- 
+这个的话，我用的方法跟推荐的不一样。我觉得不要紧，后面提到vector clock也是建议使用，只要实现这两肿排序即可。所以我都是用的Lamport Logical clock：思路来源 Lamport大神的《Lamport, L. (1978). “Time, clocks, and the ordering of events in a distributed system”》 和 《http://www.orzace.com/lamport-logical-clock/》。
+   ```
    Casul order ： 只要保证因果就好。
    Total order   :   保证一致性全序。
-  
-我开发这个程序的时候，第一要考虑清楚的是，竞争的资源是什么。这个分布式应用主要是围绕同步的。在这里，我定义竞争的资源就是”谁先在消息栏里显示”，就像一般的分布式架构中，竞争的资源是”谁先将日志写入服务器”，不能出现先结帐后下单的情况。
+   ```
+开发这个程序的时候，第一要考虑清楚的是，竞争的资源是什么。这个分布式应用主要是围绕同步的。在这里，我定义竞争的资源就是”谁先在消息栏里显示”，就像一般的分布式架构中，竞争的资源是”谁先将日志写入服务器”，不能出现先结帐后下单的情况。
 对应的在这个程序里，就不能出现b回复A的消息先于A的消息在在消息栏里现实。
 我就直接抛出实现的结果：
    选择了Total Order.在整个应用中，消息都是这样比较的：首先比较消息发出的时间，谁时间早，谁就排对排前面。如果发出的时间相等，则比较进程号，进程号小的排前面。这样保证了total .
@@ -64,7 +71,6 @@ You can choose to have either acknowledgements or negative acknowledgments“
 
 因此有很多细节要处理，包括实时检测队列，检查ack，队列清理，组员维护，等等。幸好 java在处理多线程和并发上有较大的优势。我使用了PriorBlockingQueue来对收到的队列进行维护，通过添加比较器，它能对收到的消息及时排序，把优先级高的排到队首优先处理。消息排队的原则是前面已经提到，但是遇到要求将队列中的消息进行显示的release消息时，需要将该条release消息置顶，优先处理。
 
-你先看看吧，一些问题，在给你解释。书面不好说。
 
 为了保证面向多链接的UDP确认重传，只能对收到的对话消息（协议中消息类型为 request_chat）的消息进行模拟丢包，迫使发送端重传。其他的消息类型，不会丢包。
 
@@ -73,6 +79,7 @@ You can choose to have either acknowledgements or negative acknowledgments“
 从发送者看来  ：equest_chat[自己产生] ->request_chat_ack[接收者回复] ->(全部接收者都回复消息了) ->release_chat[自己产生] -> release_chat_ack[接收者回复]-->(全部接收者都回复消息了)->显示消息
 
 
+## Code
 
 简单介绍一下源代码
 
@@ -101,7 +108,9 @@ TCPProcessor.java 一个接口，定义了TCPServerProcessor TCPServerWorker要�
 UDPProcessor.java  绝大部分消息的接收，发送，处理。其中 象资源请求（request_chat）资源请求回复（requset_ack） 资源释放（release_chat） 资源释放回复（release_ack）都是由 OrderQueueHandler 处理，UDPProcessor只负责接受这四类消息，将其插入消息队列。而剩余的消息 选举（elect） 选举回复（elect_ack）
 选举结束（elect_finish） 初始消息请求(request_init_info) 初始消息请求回复(request_init_info_ack) 都是UDPProcessor 负责的。
 
-细节问题，稍后会绘图解释。暂时写道这。好好看看
+
+## reference
+
 http://www.orzace.com/lamport-logical-clock/ 就明白我写的程序大概什么哥意思了。
 http://wenku.baidu.com/link?url=oGRTdWBv1U1oQaD__6Adzo_WxnRVV9IEU6mIswbpBmFB4Jk_1keW_OnaWV5SxZW8FnJ4RWkZ_u8SBa20eV6BPLLXc8sPUqlCutlXaiH9X3a
 这个文库也可以参考。
