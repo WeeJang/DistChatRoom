@@ -57,11 +57,13 @@ b. Casual order of the messages
 will use at startup
 a. Total order of the messages
 b. Casual order of the messages
-这个的话，我用的方法跟推荐的不一样。我觉得不要紧，后面提到vector clock也是建议使用，只要实现这两肿排序即可。所以我都是用的Lamport Logical clock：思路来源 Lamport大神的《Lamport, L. (1978). “Time, clocks, and the ordering of events in a distributed system”》 和 《http://www.orzace.com/lamport-logical-clock/》。
+   这个的话，我用的方法跟推荐的不一样。我觉得不要紧，后面提到vector clock也是建议使用，只要实现这两肿排序即可。所以我都是用的Lamport Logical clock：思路来源 Lamport大神的《Lamport, L. (1978). “Time, clocks, and the ordering of events in a distributed system”》 和 《http://www.orzace.com/lamport-logical-clock/》。
+
    ```
    Casul order ： 只要保证因果就好。
-   Total order   :   保证一致性全序。
-    ```
+   Total order :  保证一致性全序。
+   ```
+
 开发这个程序的时候，第一要考虑清楚的是，竞争的资源是什么。这个分布式应用主要是围绕同步的。在这里，我定义竞争的资源就是”谁先在消息栏里显示”，就像一般的分布式架构中，竞争的资源是”谁先将日志写入服务器”，不能出现先结帐后下单的情况。
 对应的在这个程序里，就不能出现b回复A的消息先于A的消息在在消息栏里现实。
 
